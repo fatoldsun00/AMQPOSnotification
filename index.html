@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>   
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval';" />
+    <title>Notifier</title>
+    <style>
+     html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div v-show="infos.notSaveWarning.actif">{{infos.notSaveWarning.label}}</div>
+
+      Serveur {{connected}}
+      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.server" @keyup.enter="saveConfig(); connectServer()" placeholder="mq.edisac.com:5672">
+      <ul>
+        <li v-for="(exchange,kExchange) in config.exchanges" :key="kExchange">
+          <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="prestashop">
+          {{exchange.topics.filter((t)=>t.actif).length}}
+          <ul>
+            <li v-for="(topic,kTopic) in exchange.topics" :key="kTopic">
+              <input type="text" v-model="topic.name" @keydown="infos.notSaveWarning.actif=true" :disabled="topic.actif" @keyup.enter="saveConfig()">
+              <button @click="deleteTopic(kExchange,kTopic)">X</button>
+              <button @click="toggleTopic(kExchange,kTopic)">{{topic.actif?'off':'on'}}</button>
+            </li>
+          </ul>
+          <button @click="deleteExchange(kExchange)">X</button>
+          <button @click="addTopic(exchange)">+ Topic</button>
+        </li>
+      </ul>
+      <button @click="addExchange()">+ Exchange</button>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require('electron')
+      const Vue = require('./assets/vuejs.2.6.12.js')
+   
+      var app = new Vue({
+        el: '#app',
+        data: {
+          config: {
+            server : '',
+            exchanges:[/*{
+              name:'',
+              topic:[{
+                name:'',
+                actif:false,
+              }]
+            }*/]
+          },
+          connected: false,
+          infos:{
+            notSaveWarning: {
+              actif: false,
+              label: 'Appuyer sur entrée pour sauvegarder'
+            }
+          }
+        },
+        methods: {
+          async connectServer(){
+            //ipcRenderer.sendSync('connectServer',this.config.server)
+            await ipcRenderer.invoke('connectServer', this.config.server)
+          },
+          saveConfig(){
+            this.infos.notSaveWarning.actif=false
+            ipcRenderer.send('saveConfig',this.config)
+          },
+          changeTopic(kExchange,kTopic){
+            this.saveConfig()
+          },
+          toggleTopic(kExchange,kTopic){
+            let actif = this.config.exchanges[kExchange].topics[kTopic].actif = !this.config.exchanges[kExchange].topics[kTopic].actif
+            this.saveConfig()
+            ipcRenderer.invoke(actif?'subscribeTopic':'unsubscribeTopic', JSON.stringify({
+              exchangeName: this.config.exchanges[kExchange].name,
+              topic: this.config.exchanges[kExchange].topics[kTopic].name
+            }))
+          },
+          deleteTopic(kExchange,kTopic){
+            ipcRenderer.invoke('unsubscribeTopic',JSON.stringify({
+              exchangeName: this.config.exchanges[kExchange].name,
+              topic: this.config.exchanges[kExchange].topics[kTopic].name
+            }))
+            this.config.exchanges[kExchange].topics.splice(kTopic,1)
+            this.saveConfig()
+          },
+          addTopic(exchange){
+            exchange.topics.push({name:'',actif:false})
+          },
+          addExchange(){
+            this.config.exchanges.push({name:'',topics:[]})
+          },
+          changeExchange(event){
+            console.log(event);
+            this.saveConfig()
+          },
+          deleteExchange(kExchange){
+            for (topic of this.config.exchanges[kExchange].topics){
+              if (topic.actif) {
+                ipcRenderer.invoke('unsubscribeTopic', JSON.stringify({
+                  exchangeName: this.config.exchanges[kExchange].name,
+                  topic: topic.name
+                }))
+              }
+            }
+            this.config.exchanges.splice(kExchange,1)
+            this.saveConfig()
+          },
+        }, 
+        beforeMount(){
+          ipcRenderer.on('disconnected', async (event, arg) => {
+            this.connected = false
+          })
+
+          ipcRenderer.on('connected', async (event, arg) => {
+            this.connected = true
+          })
+          ipcRenderer.on('config', async (event, arg) => {
+            try {
+              arg = JSON.parse(arg)
+              if (arg && arg.server)  {
+                this.config.server = arg.server
+                if (arg.exchanges){
+                  this.config.exchanges = arg.exchanges
+                  await this.connectServer()
+                  for (exchange of this.config.exchanges){
+                    for (topic of exchange.topics){
+                      if (topic.actif) {
+                        await ipcRenderer.invoke('subscribeTopic', JSON.stringify({
+                          exchangeName: exchange.name,
+                          topic: topic.name
+                        }))
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (err) {
+
+              //TODO
+              alert(err);
+            }
+          })
+        }
+      })     
+    </script>
+  </body>
+</html>
