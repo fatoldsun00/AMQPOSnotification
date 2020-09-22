@@ -72,7 +72,13 @@ class MQ extends EventEmitter {
         this.canal.bindQueue(q.queue, exchangeName, topic);
         this.exchanges[KExchange].consumer = await this.canal.consume(q.queue,(msg) => {
             //if (msg) this.emit('message', msg.content.toString())
-            if (msg) this.emit('message', JSON.stringify({topic,...msg.content}))
+            try {
+                msg.content=msg.content.toString()
+                msg.content=JSON.parse(msg.content)
+                this.emit('message', {topic,...msg.content})
+            } catch(err) {
+                console.log(err);
+            }
         },{
             noAck: true
         })

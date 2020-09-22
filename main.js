@@ -83,9 +83,9 @@ function createWindow () {
   
   /*Vuejs devtools*/
   const os = require('os')
-  BrowserWindow.addDevToolsExtension(
+  /*BrowserWindow.addDevToolsExtension(
      path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
-  )
+  )*/
 }
 
 app.setLoginItemSettings({

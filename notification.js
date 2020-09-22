@@ -3,7 +3,7 @@ const path = require('path')
 
 const notification = (data)=>{
     try {
-        let {title,message,icon,sound,wait,actions,reply,topic} = JSON.parse(data)
+        let {title,message,icon,sound,wait,actions,reply,topic} = data
 
         notifier.notify(
             {   
@@ -18,9 +18,7 @@ const notification = (data)=>{
                 appID : topic//'Notifications'
             },
             function(err, response,metadata) {
-                console.log(err,response,metadata);
                 if (err) throw err;
-               
             }
         )
     
