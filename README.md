@@ -1,2 +1,3 @@
-# WebSocketOSnotification
-App for Os native notification throught websocket
+# AMQPOSnotification
+App for Os native notification throught AMQP broker (rabbitMQ, etc.)
+

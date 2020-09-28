@@ -18,7 +18,7 @@
       <div v-show="infos.notSaveWarning.actif">{{infos.notSaveWarning.label}}</div>
       V.0.9.1
       Serveur {{connected}}
-      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.server" @keyup.enter="saveConfig(); connectServer()" placeholder="mq.edisac.com:5672">
+      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.server" @keyup.enter="saveConfig(); connectServer()" placeholder="mq.server.com:5672">
       <ul>
         <li v-for="(exchange,kExchange) in config.exchanges" :key="kExchange">
           <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="prestashop">
