@@ -8,7 +8,7 @@ const notification = require('./notification')
 //Auto update
 require('update-electron-app')({
   repo: 'fatoldsun00/AMQPOSnotification.git',
-  updateInterval: '12 hour',
+  updateInterval: '5 minutes',
 })
 
 let mqServer = undefined
