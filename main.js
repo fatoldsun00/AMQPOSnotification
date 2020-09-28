@@ -5,7 +5,11 @@ require('./notification')
 const {config} = require('./config')
 const MQ = require('./mq');
 const notification = require('./notification')
-const { autoUpdater } = require('electron-updater')
+//Auto update
+require('update-electron-app')({
+  repo: 'fatoldsun00/AMQPOSnotification.git',
+  updateInterval: '12 hour',
+})
 
 let mqServer = undefined
 
@@ -67,16 +71,6 @@ function createWindow () {
   //Envoie de la config
   mainWindow.webContents.once('dom-ready', () => {
     mainWindow.webContents.send('config', JSON.stringify(config.get()))
-    //attache retour status
-    /*ws.on('close', ()=>{
-      mainWindow.webContents.send('status', 0)
-      tray.setImage(path.join(__dirname,'assets', iconNameUnCo))
-    })
-
-    ws.on('open', ()=>{
-      mainWindow.webContents.send('status', 1)
-      tray.setImage(path.join(__dirname,'assets', iconNameCo))
-    })*/
   });
 
   // et charger le fichier index.html de l'application.
@@ -84,8 +78,8 @@ function createWindow () {
   mainWindow.webContents.openDevTools()
   
   /*Vuejs devtools*/
-  const os = require('os')
-  /*BrowserWindow.addDevToolsExtension(
+  /*const os = require('os')
+  BrowserWindow.addDevToolsExtension(
      path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
   )*/
 }
@@ -131,10 +125,16 @@ ipcMain.handle('connectServer', async (event, serverURL) => {
       mqServer.disconnect()
     }*/
    //co
-   mqServer = new MQ({host:serverURL})
-   mqServer.on('message',(msg)=>{notification(msg)})
-   mqServer.on('disconnected',()=>{mainWindow.webContents.send('disconnected')})
-   mqServer.on('connected',()=>{mainWindow.webContents.send('connected')})
+    mqServer = new MQ({host:serverURL})
+    mqServer.on('message',(msg)=>{notification(msg)})
+    mqServer.on('disconnected',()=>{
+      tray.setImage(path.join(__dirname,'assets', iconNameUnCo))
+      mainWindow.webContents.send('disconnected')
+    })
+    mqServer.on('connected',()=>{
+      tray.setImage(path.join(__dirname,'assets', iconNameCo))
+      mainWindow.webContents.send('connected')
+    })
 
    mqServer.on('error', async(msg)=>{
     //reco auto dans 10 s
@@ -207,13 +207,6 @@ app.on('ready', () => {
   })
 })
 
-//Auto Update
-mainWindow.once('ready-to-show', () => {
-  autoUpdater.checkForUpdatesAndNotify();
-})
-autoUpdater.on('update-downloaded', () => {
-  autoUpdater.quitAndInstall();
-})
 
 //Gestion de la position de la fenetre popup
 function showWindow() {
