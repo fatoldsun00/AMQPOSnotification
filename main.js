@@ -4,7 +4,9 @@ const path = require('path');
 require('./notification')
 const {config} = require('./config')
 const MQ = require('./mq');
-const notification = require('./notification');
+const notification = require('./notification')
+const { autoUpdater } = require('electron-updater')
+
 let mqServer = undefined
 
 let mainWindow = undefined
@@ -205,12 +207,20 @@ app.on('ready', () => {
   })
 })
 
+//Auto Update
+mainWindow.once('ready-to-show', () => {
+  autoUpdater.checkForUpdatesAndNotify();
+})
+autoUpdater.on('update-downloaded', () => {
+  autoUpdater.quitAndInstall();
+})
 
 //Gestion de la position de la fenetre popup
 function showWindow() {
   //alignWindow();
   mainWindow.show(); 
 }
+
 
 function alignWindow() {
   const position = calculateWindowPosition();

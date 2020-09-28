@@ -40,7 +40,8 @@
     },
     "win": {
       "icon": "build/icon.ico",
-      "target": "NSIS"
+      "target": "NSIS",
+      "publish": ["github"]
     }
   }
 }
