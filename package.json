@@ -17,7 +17,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "APP_DEV=true electron .",
+    "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "deploy": "electron-builder build --win --publish always"
