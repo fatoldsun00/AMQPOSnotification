@@ -1,10 +1,11 @@
 {
-  "name": "WSNotifier",
-  "version": "1.0.0",
+  "name": "AMQPNotifier",
+  "version": "1.0.1",
   "description": "Notification natif throught node-notifier. Fire on websocket event",
   "main": "main.js",
   "dependencies": {
     "amqplib": "^0.6.0",
+    "electron-updater": "^4.3.5",
     "node-notifier": "^7.0.0",
     "rascal": "^10.2.6",
     "ws": "^7.2.3"
@@ -18,30 +19,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "deploy": "electron-builder build --win --publish always"
   },
   "author": "FatOldSun00buiyar",
-  "license": "ISC",
-  "build": {
-    "asar": false,
-    "appId": "com.fatoldsun00.app",
-    "mac": {
-      "category": "supervision"
-    },
-    "extraFiles": [
-      "config.json"
-    ],
-    "files": [
-      "**/*"
-    ],
-    "nsis": {
-      "installerIcon": "build/icon.ico",
-      "createStartMenuShortcut": true
-    },
-    "win": {
-      "icon": "build/icon.ico",
-      "target": "NSIS",
-      "publish": ["github"]
-    }
-  }
+  "license": "ISC"
 }
