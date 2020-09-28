@@ -118,14 +118,14 @@ app.on('activate', () => {
 
 
 // appelle async qui renvoie une promise
-ipcMain.handle('connectServer', async (event, serverURL) => {
+ipcMain.handle('connectServer', async (event, {server, login, password}) => {
   try {
     /*if (mqServer){
       //deco
       mqServer.disconnect()
     }*/
    //co
-    mqServer = new MQ({host:serverURL})
+    mqServer = new MQ({host: server, login, password})
     mqServer.on('message',(msg)=>{notification(msg)})
     mqServer.on('disconnected',()=>{
       tray.setImage(path.join(__dirname,'assets', iconNameUnCo))
@@ -152,7 +152,7 @@ ipcMain.handle('connectServer', async (event, serverURL) => {
         console.log(error);
       }
       
-    }, 2000);
+    }, 4000);
     })
    await mqServer.connect()
  } catch (err) {

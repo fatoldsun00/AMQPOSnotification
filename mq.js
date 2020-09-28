@@ -5,8 +5,8 @@ class MQ extends EventEmitter {
     
     constructor({login,password,host}){
         super()
-        this.login = login || 'notifications'
-        this.password = password || '8rWXbKz97k8peA5j'
+        this.login = login //|| 'notifications'
+        this.password = password//|| '8rWXbKz97k8peA5j'
         this.host = host
         this.mq = undefined
         this.canal = undefined
@@ -108,7 +108,6 @@ class MQ extends EventEmitter {
                 for (let KExchange in this.exchanges){
 
                     this.exchanges[KExchange].topics.forEach((topic,KTopic) => {
-                        console.log(KTopic,topic);
                         this.canal.deleteQueue(topic.q.queue/*,true*/)
                         this.exchanges[KExchange].topics.splice(KTopic,1)
                     });

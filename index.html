@@ -34,7 +34,13 @@
           <button @click="addTopic(exchange)">+ Topic</button>
         </li>
       </ul>
-      <button @click="addExchange()">+ Exchange</button>
+
+      <button @click="addExchange()">+ Exchange</button> 
+
+      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.login" @keyup.enter="saveConfig(); config.password?connectServer():false" placeholder="login">
+      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.password" @keyup.enter="saveConfig(); config.login?connectServer():false" placeholder="password">
+      
+
     </div>
 
     <script>
@@ -52,7 +58,9 @@
                 name:'',
                 actif:false,
               }]
-            }*/]
+            }*/],
+            login: undefined,
+            password: undefined
           },
           connected: false,
           infos:{
@@ -64,8 +72,7 @@
         },
         methods: {
           async connectServer(){
-            //ipcRenderer.sendSync('connectServer',this.config.server)
-            await ipcRenderer.invoke('connectServer', this.config.server)
+            await ipcRenderer.invoke('connectServer', {server: this.config.server,login: this.config.login, password: this.config.password})
           },
           saveConfig(){
             this.infos.notSaveWarning.actif=false
@@ -126,6 +133,8 @@
               arg = JSON.parse(arg)
               if (arg && arg.server)  {
                 this.config.server = arg.server
+                this.config.login = arg.login
+                this.config.password = arg.password
                 if (arg.exchanges){
                   this.config.exchanges = arg.exchanges
                   await this.connectServer()
