@@ -42,46 +42,51 @@ class MQ extends EventEmitter {
     }
 
     async subscribe({exchangeName,topic}){
-        let  q, KTopic
-        let KExchange = this.exchanges.findIndex((ex)=>ex.name==exchangeName)
-        if (KExchange > -1){
-            //on recuepre le topic
-            KTopic = this.exchanges[KExchange].topics.findIndex((t)=>t.name==topic)
-            if (KTopic > -1){
-                q = this.exchanges[KExchange].topics[KTopic].q
-            } else {
+        try {
+            let  q, KTopic
+            let KExchange = this.exchanges.findIndex((ex)=>ex.name==exchangeName)
+            if (KExchange > -1){
+                //on recuepre le topic
+                KTopic = this.exchanges[KExchange].topics.findIndex((t)=>t.name==topic)
+                if (KTopic > -1){
+                    q = this.exchanges[KExchange].topics[KTopic].q
+                } else {
+                    q = await this.canal.assertQueue(null,{exclusive:true})
+                    this.exchanges[KExchange].topics.push({
+                        name: topic,
+                        q
+                    })
+                }
+            }else{
+                await this.canal.assertExchange(exchangeName, 'topic', {durable: false})
                 q = await this.canal.assertQueue(null,{exclusive:true})
-                this.exchanges[KExchange].topics.push({
-                    name: topic,
-                    q
+                this.exchanges.push({
+                    name: exchangeName,
+                    topics:[{
+                        name: topic,
+                        q
+                    }]
                 })
+                KExchange = this.exchanges.length - 1
             }
-        }else{
-            await this.canal.assertExchange(exchangeName, 'topic', {durable: false})
-            q = await this.canal.assertQueue(null,{exclusive:true})
-            this.exchanges.push({
-                name: exchangeName,
-                topics:[{
-                    name: topic,
-                    q
-                }]
-            })
-            KExchange = this.exchanges.length - 1
-        }
 
-        this.canal.bindQueue(q.queue, exchangeName, topic);
-        this.exchanges[KExchange].consumer = await this.canal.consume(q.queue,(msg) => {
-            //if (msg) this.emit('message', msg.content.toString())
-            try {
-                msg.content=msg.content.toString()
-                msg.content=JSON.parse(msg.content)
-                this.emit('message', {topic,...msg.content})
-            } catch(err) {
-                console.log(err);
-            }
-        },{
-            noAck: true
-        })
+            this.canal.bindQueue(q.queue, exchangeName, topic);
+            this.exchanges[KExchange].consumer = await this.canal.consume(q.queue,(msg) => {
+                //if (msg) this.emit('message', msg.content.toString())
+                try {
+                    msg.content=msg.content.toString()
+                    msg.content=JSON.parse(msg.content)
+                    this.emit('message', {topic,...msg.content})
+                } catch(err) {
+                    console.log(err);
+                }
+            },{
+                noAck: true
+            })
+        } catch (err) {
+            throw err
+        }
+        
     }
 
     unsubscribe(args = {}){
@@ -120,6 +125,7 @@ class MQ extends EventEmitter {
                 }  
             }
         } catch (err) {
+            console.log(err);
             throw err
         }
     }

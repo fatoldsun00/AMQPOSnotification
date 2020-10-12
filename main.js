@@ -136,29 +136,42 @@ ipcMain.handle('connectServer', async (event, {server, login, password}) => {
       mainWindow.webContents.send('connected')
     })
 
-   mqServer.on('error', async(msg)=>{
-    //reco auto dans 10 s
-    await setTimeout(async () => {
-      try {
-        await mqServer.connect()
-        /*const {exchanges} = config.get()
-        for (const exchange of exchanges){
-          for (const topic of exchanges.topics){
-            await mqServer.subscribe({exchange,topic})
-          }
-        }*/
-        mainWindow.webContents.send('config', JSON.stringify(config.get()))
-      } catch (error) {
-        console.log(error);
-      }
+    mqServer.on('error', async(err)=>{
+      //mainWindow.webContents.send('config', JSON.stringify(config.get()))
+      //mainWindow.webContents.send('error', err.message)
+      //mainWindow.webContents.send('error', err.message)
+      //reco auto dans 10 s
       
-    }, 4000);
+      //await mqServer.connect()
     })
-   await mqServer.connect()
- } catch (err) {
-   throw err
+    await connectMQ()
+    
+
+  } catch (err) {
+    //mainWindow.webContents.send('error', err.message)
+   
+   //throw err
  }
 })
+
+const connectMQ = async () => {
+  let cancelAutoReco = false
+  try {
+    await mqServer.connect()
+    cancelAutoReco = true
+    mainWindow.webContents.send('error', '')
+  } catch (err) {
+    mainWindow.webContents.send('error', err.message)
+    await new Promise(resolve =>  setTimeout(resolve, 4000))
+    await mqServer.disconnect()
+    if (!cancelAutoReco) {
+      await connectMQ()
+      mainWindow.webContents.send('config', JSON.stringify(config.get()))
+    }
+    cancelAutoReco = false
+  }
+} 
+
 
 ipcMain.handle('subscribeTopic', async (event, arg) => {
   await mqServer.subscribe({exchangeName, topic} = JSON.parse(arg))
@@ -172,14 +185,6 @@ ipcMain.handle('unsubscribeTopic', async (event, arg) => {
 ipcMain.on('saveConfig', (event, arg) => {
   config.save(arg)
 })
-/*
-ipcMain.on('subscribeTopic', async (event, arg) => {
-  await mqServer.subscribe({exchangeName, topic} = JSON.parse(arg))
-})
-
-ipcMain.on('unsubscribeTopic', (event, arg) => {
-  mqServer.unsubscribe({exchangeName, topic} = JSON.parse(arg))
-})*/
 
 //systray
 let tray = null

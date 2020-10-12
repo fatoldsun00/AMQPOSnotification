@@ -36,11 +36,20 @@
       </ul>
 
       <button @click="addExchange()">+ Exchange</button> 
-
-      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.login" @keyup.enter="saveConfig(); config.password?connectServer():false" placeholder="login">
-      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.password" @keyup.enter="saveConfig(); config.login?connectServer():false" placeholder="password">
-      
-
+------------------
+      <div>
+        <span>Login</span><input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.login" @keyup.enter="saveConfig(); config.password?connectServer():false" placeholder="login">
+      </div>
+      <div>
+        <span>Password</span><input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.password" @keyup.enter="saveConfig(); config.login?connectServer():false" placeholder="password">
+      </div>
+      <div>
+        <h6>
+          Last error
+        </h6>
+        {{error}}
+      </div>
+------------------
     </div>
 
     <script>
@@ -50,6 +59,7 @@
       var app = new Vue({
         el: '#app',
         data: {
+          error : undefined,
           config: {
             server : '',
             exchanges:[/*{
@@ -125,11 +135,15 @@
             this.connected = false
           })
 
+          ipcRenderer.on('error', async (event, arg) => {
+            this.error =  arg
+          })
+
           ipcRenderer.on('connected', async (event, arg) => {
             this.connected = true
           })
           ipcRenderer.on('config', async (event, arg) => {
-            try {
+           //try {
               arg = JSON.parse(arg)
               if (arg && arg.server)  {
                 this.config.server = arg.server
@@ -150,11 +164,11 @@
                   }
                 }
               }
-            } catch (err) {
-
+            /*} catch (err) {
+              this.error = err
               //TODO
-              alert(err);
-            }
+              //alert(err);
+            }*/
           })
         }
       })     
