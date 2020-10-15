@@ -22,7 +22,7 @@
   <body>
     <div id="app">
       <div v-show="infos.notSaveWarning.actif">{{infos.notSaveWarning.label}}</div>
-      V.0.9.1
+      V.0.9.5
       Serveur {{connected}}
       <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.server" @keyup.enter="saveConfig(); connectServer()" placeholder="mq.server.com:5672">
       <div :class="{disabled: !connected}">

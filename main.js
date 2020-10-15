@@ -12,7 +12,6 @@ require('update-electron-app')({
 })
 
 let mqServer = undefined
-let recoAuto = undefined
 let mainWindow = undefined
 //defaults
 let width = 350;
@@ -169,7 +168,7 @@ const connectMQ = (() => {
       mainWindow.webContents.send('error', err.message)
       pointerWait=setTimeout(async ()=>{
         connectMQ()
-      } , 2000)
+      } , 60000)
     }
   }
 })()
