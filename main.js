@@ -2,7 +2,7 @@ const electron = require('electron')
 const { app, BrowserWindow, Tray, Menu, ipcMain   } = electron
 const path = require('path');
 require('./notification')
-const {config} = require('./config')
+const {config} = require('./config') || undefined
 const MQ = require('./mq');
 const notification = require('./notification')
 //Auto update
@@ -42,12 +42,13 @@ function createWindow () {
   mainWindow = new BrowserWindow({
     //width,
    // height,
-   useContentSize: true,
+    useContentSize: true,
     icon: path.join(__dirname,'assets', 'iconeCo.ico'),
     webPreferences: {
       nodeIntegration: true
     },
-    frame: false,
+    //mainWindow.setAlwaysOnTop(true, 'screen')
+    //frame: false,
     skipTaskbar: true
   })
 
@@ -67,10 +68,16 @@ function createWindow () {
 
   
   //mainWindow.hide()
-  showWindow()
+  //showWindow()
   //Envoie de la config
-  mainWindow.webContents.once('dom-ready', () => {
-    mainWindow.webContents.send('config', JSON.stringify(config.get()))
+  mainWindow.webContents.once('dom-ready', async () => {
+    const conf = config.get()
+    if (!conf) mainWindow.show()
+    mainWindow.setSkipTaskbar(false)
+    mainWindow.webContents.send('config', JSON.stringify(conf))
+    await connectServer({server: conf.server,login: conf.login,password: conf.password})
+    //if (conf.exchanges && conf.exchanges.length > 0 ) recoTopicAuto(conf)
+    //mainWindow.webContents.send('config', JSON.stringify(conf))
   });
 
   // et charger le fichier index.html de l'application.
@@ -78,10 +85,10 @@ function createWindow () {
   mainWindow.webContents.openDevTools()
   
   /*Vuejs devtools*/
-  /*const os = require('os')
+  const os = require('os')
   BrowserWindow.addDevToolsExtension(
      path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
-  )*/
+  )
 }
 
 app.setLoginItemSettings({
@@ -118,14 +125,19 @@ app.on('activate', () => {
 
 
 // appelle async qui renvoie une promise
-ipcMain.handle('connectServer', async (event, {server, login, password}) => {
+ipcMain.handle('connectServer', (event, {server, login, password}) => {
+  connectServer({server, login, password})
+})
+
+const connectServer = async ({server, login, password}) => {
   try {
-    /*if (mqServer){
-      //deco
+  //co
+    if (mqServer) {
       mqServer.disconnect()
-    }*/
-   //co
+      mqServer = undefined
+    }
     mqServer = new MQ({host: server, login, password})
+    
     mqServer.on('message',(msg)=>{notification(msg)})
     mqServer.on('disconnected',()=>{
       tray.setImage(path.join(__dirname,'assets', iconNameUnCo))
@@ -141,36 +153,71 @@ ipcMain.handle('connectServer', async (event, {server, login, password}) => {
       //mainWindow.webContents.send('error', err.message)
       //mainWindow.webContents.send('error', err.message)
       //reco auto dans 10 s
-      
+      //await connectMQ()
       //await mqServer.connect()
+      err=JSON.parse(err)
+      if (err.code == "ECONNRESET"){
+        mainWindow.webContents.send('error', err.message)
+        await connectMQ()
+      } 
+      console.log(err);
+      //await connectMQ()
     })
     await connectMQ()
-    
-
   } catch (err) {
     //mainWindow.webContents.send('error', err.message)
-   
-   //throw err
- }
-})
-
-const connectMQ = async () => {
-  let cancelAutoReco = false
-  try {
-    await mqServer.connect()
-    cancelAutoReco = true
-    mainWindow.webContents.send('error', '')
-  } catch (err) {
-    mainWindow.webContents.send('error', err.message)
-    await new Promise(resolve =>  setTimeout(resolve, 4000))
-    await mqServer.disconnect()
-    if (!cancelAutoReco) {
-      await connectMQ()
-      mainWindow.webContents.send('config', JSON.stringify(config.get()))
-    }
-    cancelAutoReco = false
+  throw err
   }
-} 
+
+}
+const connectMQ = (() => {
+
+  //let recoInProgress = false
+  let pointerWait = undefined
+  //let cancelPreviousReco = false
+
+  return async () => {
+    //if(waitForReco) cancelPreviousReco = true
+    try {
+//      recoInProgress = true
+      clearInterval(pointerWait)
+      await mqServer.connect()
+      
+    } catch (err) {
+      recoInProgress = false
+      mainWindow.webContents.send('error', err.message)
+      await new Promise(resolve =>  pointerWait=setTimeout(async ()=>{
+        //await mqServer.disconnect()
+        await connectMQ()
+       
+        return resolve
+      } , 4000))
+     
+    } finally {
+      let conf = config.get()
+      recoTopicAuto(conf)
+      mainWindow.webContents.send('config', JSON.stringify(conf))
+      mainWindow.webContents.send('error', '')
+    }
+  }
+  //if (cancelAutoReco) console.log('exist')
+  //if (!cancelAutoReco) console.log('exist pas')
+  //let cancelAutoReco = true
+})()
+
+const recoTopicAuto = async (config) =>{
+  if (config.exchanges){
+    for (exchange of config.exchanges){
+      for (topic of exchange.topics){
+        if (topic.actif) {
+          await mqServer.subscribe({
+            exchangeName: exchange.name,
+            topic: topic.name})
+        }
+      }
+    }
+  }
+}
 
 
 ipcMain.handle('subscribeTopic', async (event, arg) => {
@@ -187,6 +234,7 @@ ipcMain.on('saveConfig', (event, arg) => {
 })
 
 //systray
+
 let tray = null
 const iconNameCo = 'iconeCo.ico'
 const iconNameUnCo = 'iconeUnCo.ico'

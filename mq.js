@@ -15,12 +15,16 @@ class MQ extends EventEmitter {
 
     async connect (){
         try {
+            if (this.mq) {
+                await this.disconnect()
+                this.mq = undefined
+            }
             const serverMQLogin = this.login?(this.password?(this.login+':'+this.password+'@') : this.login+'@') : ''
-            this.mq = await amqp.connect(`amqp://${serverMQLogin}${this.host}?heartbeat=3600`)
+            this.mq = await amqp.connect(`amqp://${serverMQLogin}${this.host}?heartbeat=3600`,{autoDelete:true})
             this.canal = await this.mq.createChannel()
             this.emit('connected')
             this.mq.on('error',(err)=>{
-                this.emit('error', JSON.stringify(err))
+                this.emit('error', err)
                 this.emit('disconnected')     
             })
         } catch (err) {
@@ -34,8 +38,9 @@ class MQ extends EventEmitter {
         try {
             this.mq.close()
             await this.unsubscribe()
+            this.mq = undefined
         } catch (err) {
-            throw err
+            //throw err
         }finally{
             this.emit('disconnected')
         }
@@ -99,7 +104,9 @@ class MQ extends EventEmitter {
                 let KExchange = this.exchanges.findIndex((ex)=>ex.name==exchangeName)
                 if (topic) {
                     let KTopic = this.exchanges[KExchange].topics.findIndex((t)=>t.name==topic)
-                    this.canal.deleteQueue(this.exchanges[KExchange].topics[KTopic].q.queue/*,true*/)
+                    this.canal.deleteQueue(this.exchanges[KExchange].topics[KTopic].q.queue/*,true*/).catch((err)=>{
+                        console.log("///////////////////////////////////",err);
+                    })
                     this.exchanges[KExchange].topics.splice(KTopic,1)
                 } else{
                     //on ferme tout les topics de l exchange
@@ -113,7 +120,9 @@ class MQ extends EventEmitter {
                 for (let KExchange in this.exchanges){
 
                     this.exchanges[KExchange].topics.forEach((topic,KTopic) => {
-                        this.canal.deleteQueue(topic.q.queue/*,true*/)
+                        this.canal.deleteQueue(topic.q.queue/*,true*/).catch((err)=>{
+                            console.log("///////////////////////////////////",err);
+                        })
                         this.exchanges[KExchange].topics.splice(KTopic,1)
                     });
 

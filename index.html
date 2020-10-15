@@ -6,11 +6,17 @@
     <title>Notifier</title>
     <style>
      html, body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .disabled{
+      pointer-events: none;
+      background-color: #000;
+      opacity: 0.5;
+
+    }
     </style>
   </head>
   <body>
@@ -19,23 +25,25 @@
       V.0.9.1
       Serveur {{connected}}
       <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.server" @keyup.enter="saveConfig(); connectServer()" placeholder="mq.server.com:5672">
-      <ul>
-        <li v-for="(exchange,kExchange) in config.exchanges" :key="kExchange">
-          <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="prestashop">
-          {{exchange.topics.filter((t)=>t.actif).length}}
-          <ul>
-            <li v-for="(topic,kTopic) in exchange.topics" :key="kTopic">
-              <input type="text" v-model="topic.name" @keydown="infos.notSaveWarning.actif=true" :disabled="topic.actif" @keyup.enter="saveConfig()">
-              <button @click="deleteTopic(kExchange,kTopic)">X</button>
-              <button @click="toggleTopic(kExchange,kTopic)">{{topic.actif?'off':'on'}}</button>
-            </li>
-          </ul>
-          <button @click="deleteExchange(kExchange)">X</button>
-          <button @click="addTopic(exchange)">+ Topic</button>
-        </li>
-      </ul>
-
+      <div :class="{disabled: !connected}">
+        <ul>
+          <li v-for="(exchange,kExchange) in config.exchanges" :key="kExchange">
+            <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="prestashop">
+            {{exchange.topics.filter((t)=>t.actif).length}}
+            <ul>
+              <li v-for="(topic,kTopic) in exchange.topics" :key="kTopic">
+                <input type="text" v-model="topic.name" @keydown="infos.notSaveWarning.actif=true" :disabled="topic.actif" @keyup.enter="saveConfig()">
+                <button @click="deleteTopic(kExchange,kTopic)">X</button>
+                <button @click="toggleTopic(kExchange,kTopic)">{{topic.actif?'off':'on'}}</button>
+              </li>
+            </ul>
+            <button @click="deleteExchange(kExchange)">X</button>
+            <button @click="addTopic(exchange)">+ Topic</button>
+          </li>
+        </ul>
+      </div>
       <button @click="addExchange()">+ Exchange</button> 
+
 ------------------
       <div>
         <span>Login</span><input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.login" @keyup.enter="saveConfig(); config.password?connectServer():false" placeholder="login">
@@ -143,15 +151,19 @@
             this.connected = true
           })
           ipcRenderer.on('config', async (event, arg) => {
-           //try {
+           try {
               arg = JSON.parse(arg)
-              if (arg && arg.server)  {
+              if (arg)  {
                 this.config.server = arg.server
                 this.config.login = arg.login
                 this.config.password = arg.password
                 if (arg.exchanges){
                   this.config.exchanges = arg.exchanges
-                  await this.connectServer()
+                }
+                /*if (arg.exchanges){
+                  this.config.exchanges = arg.exchanges
+                  let t = await this.connectServer()
+                  console.log(t);
                   for (exchange of this.config.exchanges){
                     for (topic of exchange.topics){
                       if (topic.actif) {
@@ -162,13 +174,13 @@
                       }
                     }
                   }
-                }
+                }*/
               }
-            /*} catch (err) {
+            } catch (err) {
               this.error = err
               //TODO
               //alert(err);
-            }*/
+            }
           })
         }
       })     
