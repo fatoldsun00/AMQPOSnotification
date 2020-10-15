@@ -12,7 +12,7 @@ require('update-electron-app')({
 })
 
 let mqServer = undefined
-
+let recoAuto = undefined
 let mainWindow = undefined
 //defaults
 let width = 350;
@@ -76,8 +76,6 @@ function createWindow () {
     mainWindow.setSkipTaskbar(false)
     mainWindow.webContents.send('config', JSON.stringify(conf))
     await connectServer({server: conf.server,login: conf.login,password: conf.password})
-    //if (conf.exchanges && conf.exchanges.length > 0 ) recoTopicAuto(conf)
-    //mainWindow.webContents.send('config', JSON.stringify(conf))
   });
 
   // et charger le fichier index.html de l'application.
@@ -95,9 +93,6 @@ app.setLoginItemSettings({
   openAtLogin: true
 })
 
-// Cette méthode sera appelée quant Electron aura fini
-// de s'initialiser et prêt à créer des fenêtres de navigation.
-// Certaines APIs peuvent être utilisées uniquement quand cet événement est émit.
 app.whenReady().then(createWindow)
 
 app.on('quit', () => {
@@ -121,9 +116,6 @@ app.on('activate', () => {
   } 
 })
 
-//IPCMain
-
-
 // appelle async qui renvoie une promise
 ipcMain.handle('connectServer', (event, {server, login, password}) => {
   connectServer({server, login, password})
@@ -131,11 +123,11 @@ ipcMain.handle('connectServer', (event, {server, login, password}) => {
 
 const connectServer = async ({server, login, password}) => {
   try {
-  //co
     if (mqServer) {
       mqServer.disconnect()
       mqServer = undefined
     }
+    
     mqServer = new MQ({host: server, login, password})
     
     mqServer.on('message',(msg)=>{notification(msg)})
@@ -148,61 +140,38 @@ const connectServer = async ({server, login, password}) => {
       mainWindow.webContents.send('connected')
     })
 
-    mqServer.on('error', async(err)=>{
-      //mainWindow.webContents.send('config', JSON.stringify(config.get()))
-      //mainWindow.webContents.send('error', err.message)
-      //mainWindow.webContents.send('error', err.message)
-      //reco auto dans 10 s
-      //await connectMQ()
-      //await mqServer.connect()
-      err=JSON.parse(err)
+    mqServer.on('error', async(err)=>{      
       if (err.code == "ECONNRESET"){
         mainWindow.webContents.send('error', err.message)
         await connectMQ()
       } 
-      console.log(err);
-      //await connectMQ()
     })
-    await connectMQ()
   } catch (err) {
-    //mainWindow.webContents.send('error', err.message)
-  throw err
+    mainWindow.webContents.send('error', err.message)
+  }finally{
+    await connectMQ()
   }
-
 }
-const connectMQ = (() => {
 
-  //let recoInProgress = false
-  let pointerWait = undefined
-  //let cancelPreviousReco = false
+const connectMQ = (() => {
+   let pointerWait = undefined
 
   return async () => {
-    //if(waitForReco) cancelPreviousReco = true
     try {
-//      recoInProgress = true
       clearInterval(pointerWait)
       await mqServer.connect()
-      
-    } catch (err) {
-      recoInProgress = false
-      mainWindow.webContents.send('error', err.message)
-      await new Promise(resolve =>  pointerWait=setTimeout(async ()=>{
-        //await mqServer.disconnect()
-        await connectMQ()
-       
-        return resolve
-      } , 4000))
-     
-    } finally {
       let conf = config.get()
       recoTopicAuto(conf)
       mainWindow.webContents.send('config', JSON.stringify(conf))
       mainWindow.webContents.send('error', '')
+
+    } catch (err) {
+      mainWindow.webContents.send('error', err.message)
+      pointerWait=setTimeout(async ()=>{
+        connectMQ()
+      } , 2000)
     }
   }
-  //if (cancelAutoReco) console.log('exist')
-  //if (!cancelAutoReco) console.log('exist pas')
-  //let cancelAutoReco = true
 })()
 
 const recoTopicAuto = async (config) =>{
@@ -228,13 +197,11 @@ ipcMain.handle('unsubscribeTopic', async (event, arg) => {
   await mqServer.unsubscribe({exchangeName, topic} = JSON.parse(arg))
 })
 
-
 ipcMain.on('saveConfig', (event, arg) => {
   config.save(arg)
 })
 
 //systray
-
 let tray = null
 const iconNameCo = 'iconeCo.ico'
 const iconNameUnCo = 'iconeUnCo.ico'

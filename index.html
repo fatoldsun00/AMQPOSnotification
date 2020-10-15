@@ -70,13 +70,7 @@
           error : undefined,
           config: {
             server : '',
-            exchanges:[/*{
-              name:'',
-              topic:[{
-                name:'',
-                actif:false,
-              }]
-            }*/],
+            exchanges:[],
             login: undefined,
             password: undefined
           },
@@ -95,9 +89,6 @@
           saveConfig(){
             this.infos.notSaveWarning.actif=false
             ipcRenderer.send('saveConfig',this.config)
-          },
-          changeTopic(kExchange,kTopic){
-            this.saveConfig()
           },
           toggleTopic(kExchange,kTopic){
             let actif = this.config.exchanges[kExchange].topics[kTopic].actif = !this.config.exchanges[kExchange].topics[kTopic].actif
@@ -122,18 +113,12 @@
             this.config.exchanges.push({name:'',topics:[]})
           },
           changeExchange(event){
-            console.log(event);
             this.saveConfig()
           },
           deleteExchange(kExchange){
-            for (topic of this.config.exchanges[kExchange].topics){
-              if (topic.actif) {
-                ipcRenderer.invoke('unsubscribeTopic', JSON.stringify({
-                  exchangeName: this.config.exchanges[kExchange].name,
-                  topic: topic.name
-                }))
-              }
-            }
+            ipcRenderer.invoke('unsubscribeTopic', JSON.stringify({
+              exchangeName: this.config.exchanges[kExchange].name
+            }))
             this.config.exchanges.splice(kExchange,1)
             this.saveConfig()
           },
@@ -160,26 +145,9 @@
                 if (arg.exchanges){
                   this.config.exchanges = arg.exchanges
                 }
-                /*if (arg.exchanges){
-                  this.config.exchanges = arg.exchanges
-                  let t = await this.connectServer()
-                  console.log(t);
-                  for (exchange of this.config.exchanges){
-                    for (topic of exchange.topics){
-                      if (topic.actif) {
-                        await ipcRenderer.invoke('subscribeTopic', JSON.stringify({
-                          exchangeName: exchange.name,
-                          topic: topic.name
-                        }))
-                      }
-                    }
-                  }
-                }*/
               }
             } catch (err) {
               this.error = err
-              //TODO
-              //alert(err);
             }
           })
         }

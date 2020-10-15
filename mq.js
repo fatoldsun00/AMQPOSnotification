@@ -28,8 +28,6 @@ class MQ extends EventEmitter {
                 this.emit('disconnected')     
             })
         } catch (err) {
-            this.emit('error', JSON.stringify(err))
-            this.emit('disconnected')
             throw err
         }
     }
@@ -39,8 +37,7 @@ class MQ extends EventEmitter {
             this.mq.close()
             await this.unsubscribe()
             this.mq = undefined
-        } catch (err) {
-            //throw err
+        } catch (err) {   
         }finally{
             this.emit('disconnected')
         }
@@ -77,13 +74,18 @@ class MQ extends EventEmitter {
 
             this.canal.bindQueue(q.queue, exchangeName, topic);
             this.exchanges[KExchange].consumer = await this.canal.consume(q.queue,(msg) => {
-                //if (msg) this.emit('message', msg.content.toString())
                 try {
-                    msg.content=msg.content.toString()
-                    msg.content=JSON.parse(msg.content)
-                    this.emit('message', {topic,...msg.content})
+                    if (msg && msg.content) {
+                        msg.content=msg.content.toString()
+                        msg.content=JSON.parse(msg.content)
+                        this.emit('message', {topic,...msg.content})
+                    }
                 } catch(err) {
-                    console.log(err);
+                    this.emit('message', {
+                        topic,
+                        title: 'Il y a une erreur sur les notifications' ,
+                        message: err.message,
+                        icon: 'error'})
                 }
             },{
                 noAck: true
@@ -104,9 +106,7 @@ class MQ extends EventEmitter {
                 let KExchange = this.exchanges.findIndex((ex)=>ex.name==exchangeName)
                 if (topic) {
                     let KTopic = this.exchanges[KExchange].topics.findIndex((t)=>t.name==topic)
-                    this.canal.deleteQueue(this.exchanges[KExchange].topics[KTopic].q.queue/*,true*/).catch((err)=>{
-                        console.log("///////////////////////////////////",err);
-                    })
+                    this.canal.deleteQueue(this.exchanges[KExchange].topics[KTopic].q.queue).catch((err)=>{})
                     this.exchanges[KExchange].topics.splice(KTopic,1)
                 } else{
                     //on ferme tout les topics de l exchange
@@ -118,23 +118,14 @@ class MQ extends EventEmitter {
             } else {
                 //on ferme tout les topics de tout les exchanges
                 for (let KExchange in this.exchanges){
-
                     this.exchanges[KExchange].topics.forEach((topic,KTopic) => {
-                        this.canal.deleteQueue(topic.q.queue/*,true*/).catch((err)=>{
-                            console.log("///////////////////////////////////",err);
-                        })
+                        this.canal.deleteQueue(topic.q.queue/*,true*/).catch((err)=>{})
                         this.exchanges[KExchange].topics.splice(KTopic,1)
                     });
-
-                    /*for (const [KTopic,topic] of this.exchanges[KExchange].topics){
-                        this.canal.deleteQueue(topic.q.queue)
-                        this.exchanges[KExchange].topics.splice(KTopic,1)
-                    } */ 
                     this.exchanges.splice(KExchange,1)
                 }  
             }
         } catch (err) {
-            console.log(err);
             throw err
         }
     }

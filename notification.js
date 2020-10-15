@@ -34,7 +34,7 @@ const notification = (data)=>{
     } catch (err) {
          notifier.notify({   
             title: 'Erreur notification',
-            message:  'Il y a une erreur sur les notifications :'+data,
+            message:  'Il y a une erreur sur les notifications :' + data,
             icon: path.join(__dirname,'assets/imgNotif/', 'error.png'), // Absolute path (doesn't work on balloons)
             wait:  true, // Wait with callback, until user action is taken against notification, does not apply to Windows Toasters as they always wait or notify-send as it does not support the wait option
             reply: false,
