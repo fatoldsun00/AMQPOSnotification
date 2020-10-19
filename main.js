@@ -35,7 +35,7 @@ function createWindow () {
       nodeIntegration: true
     },
     //mainWindow.setAlwaysOnTop(true, 'screen')
-    //frame: false,
+    frame: false,
     skipTaskbar: true
   })
 

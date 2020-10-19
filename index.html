@@ -5,44 +5,151 @@
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval';" />
     <title>Notifier</title>
     <style>
-     html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
+     html {
+      margin: 0 auto;
+      padding: 10px 20px;
+      background-color: #000000d9;
+    }
+    input[type="text"]{
+      background-color: #f05044;
+      color: #000;
+      border: none;
+      height: 25px;
+      padding: 0 5px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    input[type="text"]::placeholder {
+      color: #000000bf;
+      font-style: italic;
+    }
+    
+    #info {
+      background-color: #2C4870;
+      border-radius: 20%;
     }
     .disabled{
       pointer-events: none;
-      background-color: #000;
+      background-color: #051A38;
       opacity: 0.5;
 
+    }
+    .connectionStatus{
+      width: 20px;
+      height: 20px;
+      border-radius: 100%;
+      display: inline-block;
+      vertical-align: sub;
+      background-color: #bb1c0f
+    }
+    .connected{
+      background-color: #5ef455;
+    }
+    /* button */
+    .icon-cog { 
+      width: 2rem;
+      display: block;
+      height: 2rem;
+      background-color: #bb1c0f;
+      -webkit-mask-image: url(./assets/cog.svg);
+      mask-image: url(./assets/cog.svg);
+    }
+        
+    .round-button {
+      position: relative;
+      display: inline-block;
+      margin-right: -4px;
+    }
+
+    .round-button:before {
+      content: "";
+      display: block;
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #fff;
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      top: 50%;
+      z-index: -1;
+    }
+
+    .round-button a:before {
+      content: "";
+      display: block;
+      background: #fff;
+      border-top: 2px solid #ddd;
+      position: absolute;
+      top: -18px;
+      left: -18px;
+      bottom: -18px;
+      right: -18px;
+      z-index: -1;
+      border-radius: 50%;
+      box-shadow: inset 0px 8px 48px #ddd;
+    }
+
+    .round-button a {
+      display: block;
+      text-decoration: none;
+      background-color: #f7f7f7;
+      background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#e7e7e7));
+      background-image: -webkit-linear-gradient(top, #f7f7f7, #e7e7e7);
+      background-image: -moz-linear-gradient(top, #f7f7f7, #e7e7e7);
+      background-image: -ms-linear-gradient(top, #f7f7f7, #e7e7e7);
+      background-image: -o-linear-gradient(top, #f7f7f7, #e7e7e7);
+      color: #a7a7a7;
+      padding: 0.2rem;
+      position: relative;
+      text-align: center;
+      line-height: 144px;
+      border-radius: 50%;
+      box-shadow: 0px 3px 8px #aaa, inset 0px 2px 3px #fff;
+      border: solid 1px transparent;
+    }
+
+    .round-button a:active {
+      box-shadow: 0px 3px 4px #aaa inset, 0px 2px 3px #fff;
+    }
+
+    .round-button a:hover {
+      text-decoration: none;
+      color: #555;
+      background: #f5f5f5;
     }
     </style>
   </head>
   <body>
     <div id="app">
-      <div v-show="infos.notSaveWarning.actif">{{infos.notSaveWarning.label}}</div>
-      V.0.9.52
-      Serveur {{connected}}
-      <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.server" @keyup.enter="saveConfig(); connectServer()" placeholder="mq.server.com:5672">
-      <div :class="{disabled: !connected}">
-        <ul>
-          <li v-for="(exchange,kExchange) in config.exchanges" :key="kExchange">
-            <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="prestashop">
-            {{exchange.topics.filter((t)=>t.actif).length}}
-            <ul>
-              <li v-for="(topic,kTopic) in exchange.topics" :key="kTopic">
-                <input type="text" v-model="topic.name" @keydown="infos.notSaveWarning.actif=true" :disabled="topic.actif" @keyup.enter="saveConfig()">
-                <button @click="deleteTopic(kExchange,kTopic)">X</button>
-                <button @click="toggleTopic(kExchange,kTopic)">{{topic.actif?'off':'on'}}</button>
-              </li>
-            </ul>
-            <button @click="deleteExchange(kExchange)">X</button>
-            <button @click="addTopic(exchange)">+ Topic</button>
-          </li>
-        </ul>
+      <div id="info" v-show="infos.notSaveWarning.actif">{{infos.notSaveWarning.label}}</div>
+  
+      <div>
+        <input type="text" @keydown="infos.notSaveWarning.actif=true" 
+          v-model="config.server" 
+          @keyup.enter="saveConfig(); connectServer()" 
+          placeholder="serverURL:PORT">
+        
+        <span class="connectionStatus" :class="{connected: connected}"></span>
+        
+        <div class="round-button">
+          <a href="#">
+            <span class="icon-cog"></span>
+          </span>
+        </div>
+      </div>
+
+      <div v-for="(exchange,kExchange) in config.exchanges" :key="kExchange" :class="{disabled: !connected}">
+        <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="prestashop">
+        
+        <button @click="deleteExchange(kExchange)">X</button>
+        <button @click="addTopic(exchange)">+ Topic</button>
+        <div v-for="(topic,kTopic) in exchange.topics" :key="kTopic">
+          <input type="text" v-model="topic.name" @keydown="infos.notSaveWarning.actif=true" :disabled="topic.actif" @keyup.enter="saveConfig()">
+          <button @click="deleteTopic(kExchange,kTopic)">X</button>
+          <button @click="toggleTopic(kExchange,kTopic)">{{topic.actif?'off':'on'}}</button>
+        </div>
       </div>
       <button @click="addExchange()">+ Exchange</button> 
+
 
 ------------------
       <div>

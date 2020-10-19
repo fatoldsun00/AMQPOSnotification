@@ -6,7 +6,7 @@
   "dependencies": {
     "amqplib": "^0.6.0",
     "electron-updater": "^4.3.5",
-    "node-notifier": "^7.0.0",
+    "node-notifier": "^7.0.0"
   },
   "devDependencies": {
     "electron": "^8.2.1",
