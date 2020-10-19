@@ -1,53 +1,16 @@
 const electron = require('electron')
 const { app, BrowserWindow, Tray, Menu, ipcMain   } = electron
 const path = require('path');
-require('./notification')
 const {config} = require('./config') || undefined
 const MQ = require('./mq');
 const notification = require('./notification')
-//Auto update
-/*require('update-electron-app')({
-  repo: 'fatoldsun00/AMQPOSnotification.git',
-  updateInterval: '5 minutes',
-})*/
 
-
-
-
-const log = require('electron-log');
+//Auto Update check
 const {autoUpdater} = require("electron-updater")
-autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info'
-log.info('App starting...')
-autoUpdater.on('checking-for-update', () => {
-  console.log('Checking for update...');
-})
-autoUpdater.on('update-available', (info) => {
-  console.log('Update available.');
-})
-autoUpdater.on('update-not-available', (info) => {
-  console.log('Update not available.');
-})
-autoUpdater.on('error', (err) => {
-  console.log('Error in auto-updater. ' + err);
-})
-autoUpdater.on('download-progress', (progressObj) => {
-  let log_message = "Download speed: " + progressObj.bytesPerSecond;
-  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-  console.log(log_message);
-})
-autoUpdater.on('update-downloaded', (info) => {
-  console.log('Update downloaded');
-});
 
 app.on('ready', function()  {
   autoUpdater.checkForUpdatesAndNotify();
 });
-
-
-
-
 
 
 let mqServer = undefined
@@ -58,20 +21,6 @@ let height = 250;
 
 let margin_x = 0;
 let margin_y = 0;
-
-const appFolder = path.dirname(process.execPath)
-const updateExe = path.resolve(appFolder, '..', 'Update.exe')
-const exeName = path.basename(process.execPath)
-
-//lancement au démarrage
-app.setLoginItemSettings({
-  openAtLogin: true,
-  path: updateExe,
-  args: [
-    '--processStart', `"${exeName}"`,
-    '--process-start-args', `"--hidden"`
-  ]
-})
 
 
 function createWindow () {
@@ -118,16 +67,15 @@ function createWindow () {
 
   // et charger le fichier index.html de l'application.
   mainWindow.loadFile('index.html')
-  console.log(appFolder);
+
   if (!app.isPackaged){ // return true if app is packaged (prod mode)
     mainWindow.webContents.openDevTools()
+    /*Vuejs devtools*/
+    /*const os = require('os')
+    BrowserWindow.addDevToolsExtension(
+       path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
+    )*/
   }
-  
-  /*Vuejs devtools*/
-  /*const os = require('os')
-  BrowserWindow.addDevToolsExtension(
-     path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
-  )*/
 }
 
 app.setLoginItemSettings({
