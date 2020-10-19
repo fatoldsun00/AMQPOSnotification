@@ -79,13 +79,16 @@ function createWindow () {
 
   // et charger le fichier index.html de l'application.
   mainWindow.loadFile('index.html')
-  mainWindow.webContents.openDevTools()
+  console.log(appFolder);
+  if (!app.isPackaged){ // return true if app is packaged (prod mode)
+    mainWindow.webContents.openDevTools()
+  }
   
   /*Vuejs devtools*/
-  const os = require('os')
+  /*const os = require('os')
   BrowserWindow.addDevToolsExtension(
      path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
-  )
+  )*/
 }
 
 app.setLoginItemSettings({

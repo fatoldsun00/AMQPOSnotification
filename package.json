@@ -1,6 +1,6 @@
 {
   "name": "AMQPNotifier",
-  "version": "0.9.5",
+  "version": "0.9.51",
   "description": "Notification natif throught node-notifier. Fire on websocket event",
   "main": "main.js",
   "dependencies": {
