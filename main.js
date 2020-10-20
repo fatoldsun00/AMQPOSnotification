@@ -75,12 +75,13 @@ function createWindow () {
     BrowserWindow.addDevToolsExtension(
        path.join(os.homedir(), 'AppData\\Local\\Chromium\\User Data\\Default\\Extensions\\nhdogjmejiglipccpnnnanhbledajbpd\\5.3.3_0')
     )*/
+  } else {
+    app.setLoginItemSettings({
+      openAtLogin: true
+    })
+    
   }
 }
-
-app.setLoginItemSettings({
-  openAtLogin: true
-})
 
 app.whenReady().then(createWindow)
 
