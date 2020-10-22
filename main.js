@@ -12,35 +12,41 @@ app.on('ready', function()  {
   autoUpdater.checkForUpdatesAndNotify();
 });
 
-
 let mqServer = undefined
 let mainWindow = undefined
 //defaults
-let width = 350;
-let height = 250;
-
-let margin_x = 0;
-let margin_y = 0;
-
+const width = 400;
+const height = 600;
+let screenBounds
+let x
+let y
 
 function createWindow () {
+
   app.allowRendererProcessReuse = true
   // Cree la fenetre du navigateur.
+  screenBounds = electron.screen.getPrimaryDisplay().size
+  x = screenBounds.width - width
+  y = screenBounds.height - height
+
   mainWindow = new BrowserWindow({
-    //width,
-   // height,
+    width,
+    height,
+    x,
+    y,
+    resizable: false,
     useContentSize: true,
+    movable: false,
     icon: path.join(__dirname,'assets', 'iconeCo.ico'),
     webPreferences: {
       nodeIntegration: true
     },
-    //mainWindow.setAlwaysOnTop(true, 'screen')
-    frame: false,
+    thickFrame: true,
     skipTaskbar: true
   })
 
   mainWindow.on('minimize',function(event){
-    event.preventDefault(); 
+    event.preventDefault();
     mainWindow.hide();
   });
 
@@ -53,9 +59,6 @@ function createWindow () {
     return false;
   });
 
-  
-  //mainWindow.hide()
-  //showWindow()
   //Envoie de la config
   mainWindow.webContents.once('dom-ready', async () => {
     const conf = config.get()
@@ -212,76 +215,8 @@ app.on('ready', () => {
     if (mainWindow.isVisible()){
       mainWindow.hide();
     } else {
-      showWindow()
+      mainWindow.show();
     }
   })
 })
 
-
-//Gestion de la position de la fenetre popup
-function showWindow() {
-  //alignWindow();
-  mainWindow.show(); 
-}
-
-
-function alignWindow() {
-  const position = calculateWindowPosition();
-
-  width = electron.screen.getPrimaryDisplay().size.width/2 //350;
-  height = electron.screen.getPrimaryDisplay().size.height //250;
-
-
-  mainWindow.setBounds({
-    width: width,
-    height: height,
-    x: position.x,
-    y: position.y
-  });
-}
-
-function calculateWindowPosition() {
-  const screenBounds = electron.screen.getPrimaryDisplay().size;
-  const trayBounds = tray.getBounds();
-
-  //where is the icon on the screen?
-  let trayPos = 4; // 1:top-left 2:top-right 3:bottom-left 4.bottom-right
-  trayPos = trayBounds.y > screenBounds.height / 2 ? trayPos : trayPos / 2;
-  trayPos = trayBounds.x > screenBounds.width / 2 ? trayPos : trayPos - 1;
-
-  let DEFAULT_MARGIN = { x: margin_x, y: margin_y };
-
-  //calculate the new window position
-  switch (trayPos) {
-    case 1: // for TOP - LEFT
-      x = Math.floor(trayBounds.x + DEFAULT_MARGIN.x + trayBounds.width / 2);
-      y = Math.floor(trayBounds.y + DEFAULT_MARGIN.y + trayBounds.height / 2);
-      break;
-
-    case 2: // for TOP - RIGHT
-      x = Math.floor(
-        trayBounds.x - width - DEFAULT_MARGIN.x + trayBounds.width / 2
-      );
-      y = Math.floor(trayBounds.y + DEFAULT_MARGIN.y + trayBounds.height / 2);
-      break;
-
-    case 3: // for BOTTOM - LEFT
-      x = Math.floor(trayBounds.x + DEFAULT_MARGIN.x + trayBounds.width / 2);
-      y = Math.floor(
-        trayBounds.y - height - DEFAULT_MARGIN.y + trayBounds.height / 2
-      );
-      break;
-
-    case 4: // for BOTTOM - RIGHT
-      x = Math.floor(
-        trayBounds.x - width - DEFAULT_MARGIN.x + trayBounds.width / 2
-      );
-      y = Math.floor(
-        trayBounds.y - height - DEFAULT_MARGIN.y + trayBounds.height / 2
-      );
-      break;
-  }
-  x=0
-  y=0
-  return { x: x, y: y };
-}

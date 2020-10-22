@@ -12,6 +12,8 @@
 
 
     #info, #error {
+      display: grid;
+      grid-template-columns: 1rem auto;
       background-color: #5ef455;
       border-radius: 0.3rem;
       padding: 0.3rem;
@@ -26,12 +28,13 @@
       background-color: #bb1c0f
     }
 
+
     #paramServer,
     .exchange,
     .topic {
       display: grid;
       grid-template-columns: 5fr 1fr 1fr;
-      margin-bottom: 1rem;
+      margin-bottom: 1rem ;
     }
 
     #paramServer > *,
@@ -62,10 +65,14 @@
       font-style: italic;
     }
     
+    button{
+      border: none;
+      background: none;
+    }
     #tabParam{
       position: relative;
     }
-    #tabParam:after{
+    #tabParam.disabled:after{
       content: "";
       position: absolute;
       width: calc(100% + 0.6rem);
@@ -75,6 +82,10 @@
       left: 0;
       top: 0;
       background-image: url(./assets/diagonal-stripes.svg);
+    }
+
+    #tabLogin input {
+      margin-bottom: 1rem;
     }
 
     .connectionStatus{
@@ -90,11 +101,29 @@
       background-color: #5ef455;
     }
 
+    .addTopic,
+    .addExchange{
+      display: flex;
+      cursor: pointer;
+    }
+    .addTopic [class^="icon"],
+    .addExchange [class^="icon"]{
+      margin-right: 0.2rem;
+    }
+
     [class^="icon"]{
       width: 2rem;
       display: block;
       height: 2rem;
       background-color: black;
+    }
+
+    .icon-trash { 
+      width: 1rem;
+      height: 1rem;
+      -webkit-mask-image: url(./assets/trash.svg);
+      mask-image: url(./assets/trash.svg);
+      cursor: pointer;
     }
     
     .icon-user-solid-circle { 
@@ -103,21 +132,63 @@
       cursor: pointer;
     }
 
-    .icon-user-solid-circle { 
-      width: 2rem;
-      display: block;
-      height: 2rem;
-      background-color: black;
-      -webkit-mask-image: url(./assets/user-solid-circle.svg);
-      mask-image: url(./assets/user-solid-circle.svg);
+    .icon-arrow-outline-left{
+      -webkit-mask-image: url(./assets/arrow-outline-left.svg);
+      mask-image: url(./assets/arrow-outline-left.svg);
+      cursor: pointer;
+    }
+
+    .icon-information-solid{
+      width: 1rem;
+      height: 1rem;
+      -webkit-mask-image: url(./assets/information-solid.svg);
+      mask-image: url(./assets/information-solid.svg);
+      cursor: pointer;
+    }
+
+    .icon-bug{
+      width: 1rem;
+      height: 1rem;
+      -webkit-mask-image: url(./assets/bug.svg);
+      mask-image: url(./assets/bug.svg);
+      cursor: pointer;
+    }
+    
+    .icon-add-solid{
+      width: 1rem;
+      height: 1rem;
+      -webkit-mask-image: url(./assets/add-solid.svg);
+      mask-image: url(./assets/add-solid.svg);
+      cursor: pointer;
+    }
+
+    .icon-inbox-check{
+      width: 1rem;
+      height: 1rem;
+      -webkit-mask-image: url(./assets/inbox-check.svg);
+      mask-image: url(./assets/inbox-check.svg);
+      cursor: pointer;
+    }
+
+    .icon-inbox{
+      width: 1rem;
+      height: 1rem;
+      -webkit-mask-image: url(./assets/inbox.svg);
+      mask-image: url(./assets/inbox.svg);
       cursor: pointer;
     }
     </style>
   </head>
   <body>
     <div id="app">
-      <div id="info" v-show="infos.notSaveWarning.actif">{{infos.notSaveWarning.label}}</div>
-      <div id="error" v-show="error && error.length>0">{{error}}</div>
+      <div id="info" v-show="infos.notSaveWarning.actif">
+        <div class="icon-information-solid"></div>
+        <div>{{infos.notSaveWarning.label}}</div>
+      </div>
+      <div id="error" v-show="error && error.length>0">
+        <div class="icon-bug"></div>
+        <div>{{error}}</div>
+      </div>
 
       <div id="paramServer">
         <input type="text" @keydown="infos.notSaveWarning.actif=true" 
@@ -127,31 +198,31 @@
         
         <div class="connectionStatus" :class="{connected: connected}"></div>
         <div class="icon-user-solid-circle" v-show="tabActif==1" @click="tabActif=2"></div>
-        <div class="icon-user-solid-circle" v-show="tabActif==2" @click="tabActif=1"></div>
+        <div class="icon-arrow-outline-left" v-show="tabActif==2" @click="tabActif=1"></div>
       </div>
-
-      <div id="tabParam" v-show="tabActif==1">  
-        <div class="exchanges" v-for="(exchange,kExchange) in config.exchanges" :key="kExchange" :class="{disabled: !connected}">
+      <hr>
+      <div id="tabParam" v-show="tabActif==1"  :class="{disabled: !connected}">  
+        <div class="exchanges" v-for="(exchange,kExchange) in config.exchanges" :key="kExchange">
           <div class="exchange">
             <input type="text" @keydown="infos.notSaveWarning.actif=true" :disabled="exchange.topics.filter((t)=>t.actif).length>0" v-model="exchange.name" @keyup.enter="saveConfig()" placeholder="Exchange name">
             <button @click="deleteExchange(kExchange)"><span class="icon-trash"></span></button>
-            <button @click="addTopic(exchange)"><span class="add-solid"></span> Topic</button>
+            <button @click="addTopic(exchange)" class="addTopic"><span class="icon-add-solid"></span><span>Topic</span></button>
           </div>
           <div class="topic" v-for="(topic,kTopic) in exchange.topics" :key="kTopic">
             <input type="text" v-model="topic.name" @keydown="infos.notSaveWarning.actif=true" :disabled="topic.actif" @keyup.enter="saveConfig()" placeholder="Topic name">
-            <button @click="deleteTopic(kExchange,kTopic)">X</button>
-            <button @click="toggleTopic(kExchange,kTopic)">{{topic.actif?'off':'on'}}</button>
+            <button @click="deleteTopic(kExchange,kTopic)"><span class="icon-trash"></span></button>
+            <button @click="toggleTopic(kExchange,kTopic)" 
+              v-show="topic && topic.name && topic.name.length>0"
+              :class="{'icon-inbox-check': topic.actif,'icon-inbox': !topic.actif}">
+              <span class="icon-trash"></span>
+            </button>
           </div>
         </div>
-        <button @click="addExchange()">+ Exchange</button> 
+        <button @click="addExchange()" class="addExchange"><span class="icon-add-solid"></span><span>Exchange</span></button> 
       </div>
       <div id="tabLogin" v-show="tabActif==2">
-        <div>
           <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.login" @keyup.enter="saveConfig(); config.password?connectServer():false" placeholder="login">
-        </div>
-        <div>
           <input type="text" @keydown="infos.notSaveWarning.actif=true" v-model="config.password" @keyup.enter="saveConfig(); config.login?connectServer():false" placeholder="password">
-        </div>
       </div>
     </div>
 
