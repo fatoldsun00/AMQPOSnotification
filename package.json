@@ -1,6 +1,6 @@
 {
   "name": "amqpnotifier",
-  "version": "1",
+  "version": "1.0.0",
   "description": "Natif notification throught node-notifier. Fire on AMQP topic msg receive",
   "main": "main.js",
   "dependencies": {
