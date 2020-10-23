@@ -1,7 +1,7 @@
 # AMQPOSnotification
 Electron App for Os native notification throught AMQP broker (rabbitMQ, etc.)
 
-Config application (serveur, login and password if needed, Exchanges and topics to listen), publish a message on rabbitMQ, voilà.
+Configure application (serveur, login and password if needed, Exchanges and topics to listen), publish a message on rabbitMQ, voilà.
 Application co an AMQP broker (like rabbitMQ serveur). If server down, application try to reco server every minutes.
 
 - You can create multiple Exchange and multiple Topic for each Exchange
